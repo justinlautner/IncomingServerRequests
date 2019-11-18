@@ -5,6 +5,7 @@ import java.util.Date;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.logging.Logger;
 
 public class Main {
 
@@ -38,6 +39,7 @@ public class Main {
 class RequestObject implements Callable<Void> {
 
     private final Socket socket;
+    private static final Logger logger = Logger.getLogger("SingleFileHTTPServer");
 
     RequestObject(Socket socket){
         this.socket = socket;
@@ -47,34 +49,25 @@ class RequestObject implements Callable<Void> {
     public Void call() {
 
         try{
-            /*InputStreamReader inputStreamReader = new InputStreamReader(socket.getInputStream());
+            InputStreamReader inputStreamReader = new InputStreamReader(socket.getInputStream());
 
             DataOutputStream dataOutputStream = new DataOutputStream(socket.getOutputStream());
 
-            dataOutputStream.writeUTF("GET /home/jay/Downloads/rclone-v1.50.1-linux-amd64/rclone.1" + " HTTP/1.1\n" +
-                    "Connection: close\n");
-            dataOutputStream.writeUTF("\r\n");
-            dataOutputStream.flush();*/
-
-            OutputStream out = new BufferedOutputStream(
-                    socket.getOutputStream()
-            );
-            InputStream in = new BufferedInputStream(
-                    socket.getInputStream()
-            );
             // read the first line only; that's all we need
             StringBuilder request = new StringBuilder(80);
             while (true) {
-                int c = in.read();
+                int c = inputStreamReader.read();
                 if (c == '\r' || c == '\n' || c == -1) break;
                 request.append((char) c);
             }
             // If this is HTTP/1.0 or later send a MIME header
-            if (request.toString().indexOf("HTTP/") != -1) {
-                out.write(header);
+            if (request.toString().contains("HTTP/")) {
+                dataOutputStream.writeUTF("GET ");
             }
-            out.write(content);
-            out.flush();
+
+            logger.info("Accepting connections on port " + socket.getLocalPort());
+            logger.info("Data to be sent:");
+
 
         } catch (IOException e) {
             e.printStackTrace();
