@@ -1,11 +1,12 @@
 import java.io.*;
 import java.net.ServerSocket;
 import java.net.Socket;
-import java.util.Date;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import java.util.logging.Logger;
 
 public class Main {
 
@@ -39,7 +40,6 @@ public class Main {
 class RequestObject implements Callable<Void> {
 
     private final Socket socket;
-    private static final Logger logger = Logger.getLogger("SingleFileHTTPServer");
 
     RequestObject(Socket socket){
         this.socket = socket;
@@ -53,24 +53,34 @@ class RequestObject implements Callable<Void> {
 
             DataOutputStream dataOutputStream = new DataOutputStream(socket.getOutputStream());
 
-            // read the first line only; that's all we need
             StringBuilder request = new StringBuilder(80);
             while (true) {
                 int c = inputStreamReader.read();
                 if (c == '\r' || c == '\n' || c == -1) break;
                 request.append((char) c);
             }
-            // If this is HTTP/1.0 or later send a MIME header
+
             if (request.toString().contains("HTTP/")) {
-                dataOutputStream.writeUTF("GET ");
+                Path path = Paths.get("/home/jay/Dropbox/University of Illinois-Springfield/FS2019/Algorithms and Computation/Lectures/Module 10/module_10_dynamic_2.html");
+                byte[] data = Files.readAllBytes(path);
+                for (byte datum : data) {
+                    dataOutputStream.writeByte(datum);
+                }
+
             }
 
-            logger.info("Accepting connections on port " + socket.getLocalPort());
-            logger.info("Data to be sent:");
-
+            System.out.println("got: " + request);
 
         } catch (IOException e) {
             e.printStackTrace();
+        }finally {
+            if (socket != null) {
+                try {
+                    socket.close();
+                } catch (IOException ex) {
+                    // ignore
+                }
+            }
         }
 
         return null;
